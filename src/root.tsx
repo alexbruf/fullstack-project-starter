@@ -8,7 +8,11 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { clerkMiddleware, rootAuthLoader } from '@clerk/react-router/server'
 import "./app.css";
+import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/react-router";
+import { envContext } from "./context";
+import {env} from "cloudflare:workers";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -22,6 +26,23 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
 ];
+
+export const middleware: Route.MiddlewareFunction[] = [
+	clerkMiddleware({
+		secretKey: env.CLERK_SECRET_KEY,
+		publishableKey: env.VITE_CLERK_PUBLISHABLE_KEY,
+	})
+]
+
+export const loader = (args: Route.LoaderArgs) => {
+	const env = args.context.get(envContext);
+	return rootAuthLoader(args, {
+		publishableKey: env.VITE_CLERK_PUBLISHABLE_KEY,
+		secretKey: env.CLERK_SECRET_KEY,
+	});
+}
+
+
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,11 +59,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
+  )
 }
 
-export default function App() {
-  return <Outlet />;
+export default function App({ loaderData }: Route.ComponentProps) {
+  return (
+    <ClerkProvider loaderData={loaderData}>
+      <header className="flex items-center justify-center py-8 px-4">
+        {/* Show the sign-in button when the user is signed out */}
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+        {/* Show the user button when the user is signed in */}
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+      </header>
+      <main>
+        <Outlet />
+      </main>
+    </ClerkProvider>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

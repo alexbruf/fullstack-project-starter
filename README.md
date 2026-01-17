@@ -1,79 +1,58 @@
-# Welcome to React Router!
 
-A modern, production-ready template for building full-stack React applications using React Router.
+# Todo App
 
-## Features
+A todo application built with a full-stack JavaScript framework.
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+features:
+- login (clerk)
+- register
+- add todo
+- delete todo (d1)
+- mark todo as completed (update) and edit todo
+- email when todo complete (queue example, resend)
+- email daily summary of todos (cron example)
+- export todos to CSV (r2 example)
 
-## Getting Started
 
-### Installation
+# getting started (setting up wrangler stuff)
 
-Install the dependencies:
+1. get d1 database set up
+` wrangler d1 create "todo-db" --binding="TODO_DB" `
 
-```bash
-npm install
+2. get r2 bucket set up
+` wrangler r2 bucket create "todo-exports" --binding="TODO_EXPORTS" `
+
+3. get queue set up
+` wrangler queue create "email-queue"` 
+```
+Configure your Worker to send messages to this queue:
+
+{
+  "queues": {
+    "producers": [
+      {
+        "queue": "email-queue",
+        "binding": "EMAIL_QUEUE"
+      }
+    ]
+  }
+}
+Configure your Worker to consume messages from this queue:
+
+{
+  "queues": {
+    "consumers": [
+      {
+        "queue": "email-queue"
+      }
+    ]
+  }
+}
 ```
 
-### Development
 
-Start the development server with HMR:
+env variables (.dev.vars):
+`VITE_CLERK_PUBLISHABLE_KEY=`
+`CLERK_SECRET_KEY=`
+`RESEND_API_KEY=`
 
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Previewing the Production Build
-
-Preview the production build locally:
-
-```bash
-npm run preview
-```
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-Deployment is done using the Wrangler CLI.
-
-To build and deploy directly to production:
-
-```sh
-npm run deploy
-```
-
-To deploy a preview URL:
-
-```sh
-npx wrangler versions upload
-```
-
-You can then promote a version to production after verification or roll it out progressively.
-
-```sh
-npx wrangler versions deploy
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
