@@ -1,3 +1,4 @@
+import { RiAddLine } from "@remixicon/react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -10,9 +11,8 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Field, FieldLabel } from "~/components/ui/field";
-import { RiAddLine } from "@remixicon/react";
+import { Input } from "~/components/ui/input";
 
 interface CreateTodoDialogProps {
   onCreateTodo: (title: string) => void;

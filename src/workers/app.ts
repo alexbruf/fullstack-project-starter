@@ -1,6 +1,6 @@
 import app from "~/api/app";
-import queue from "~/workers/queue";
 import cron from "~/workers/cron";
+import queue from "~/workers/queue";
 export default {
   async fetch(request, env, ctx) {
     return app.fetch(request, env, ctx);

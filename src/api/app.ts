@@ -26,7 +26,7 @@ app.all("*", async (c) => {
       // passthrough headers from original request to preserve auth info
       // if headers included in init, those take precedence
       if (!init?.headers) {
-        let init2 = init || {};
+        const init2 = init || {};
         init2.headers = new Headers(c.req.raw.headers);
         request = new Request(request, init2);
       }

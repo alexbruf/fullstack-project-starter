@@ -1,0 +1,45 @@
+{
+  "description": "API endpoint inventory - update when adding/removing endpoints",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/message",
+      "description": "Health check / hello world"
+    },
+    {
+      "method": "GET",
+      "path": "/api/protected",
+      "description": "Protected route example"
+    },
+    {
+      "method": "GET",
+      "path": "/api/todo",
+      "description": "List todos for authenticated user"
+    },
+    {
+      "method": "POST",
+      "path": "/api/todo",
+      "description": "Create a new todo"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/todo/:id",
+      "description": "Update a todo by ID"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/todo/:id",
+      "description": "Delete a todo by ID"
+    },
+    {
+      "method": "GET",
+      "path": "/api/todo/export/:id",
+      "description": "Download exported todos CSV"
+    },
+    {
+      "method": "POST",
+      "path": "/api/todo/export",
+      "description": "Export todos to CSV and upload to R2"
+    }
+  ]
+}

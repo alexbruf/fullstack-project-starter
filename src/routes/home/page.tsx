@@ -1,11 +1,7 @@
-import type { Route } from "./+types/page";
-import type {
-  CreateTodoRequest,
-  ListTodosResponse,
-  UpdateTodoRequest,
-} from "~/api/api";
-import { columns } from "./columns";
-import { DataTable } from "./data-table";
+import { RiCheckboxCircleLine, RiDownloadLine } from "@remixicon/react";
+import { useFetcher } from "react-router";
+import type { CreateTodoRequest, ListTodosResponse, UpdateTodoRequest } from "~/api/api";
+import { Button } from "~/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -14,16 +10,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "~/components/ui/empty";
-import { RiCheckboxCircleLine, RiDownloadLine } from "@remixicon/react";
+import type { Route } from "./+types/page";
+import { columns } from "./columns";
 import { CreateTodoDialog } from "./create-todo-dialog";
-import { Button } from "~/components/ui/button";
-import { useFetcher } from "react-router";
+import { DataTable } from "./data-table";
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "My Todos" },
-    { name: "description", content: "Manage your todos" },
-  ];
+  return [{ title: "My Todos" }, { name: "description", content: "Manage your todos" }];
 }
 
 export async function clientLoader(args: Route.ClientLoaderArgs) {
@@ -35,9 +28,10 @@ export async function clientLoader(args: Route.ClientLoaderArgs) {
   if (params.has("offset")) {
     passthroughParams.set("offset", params.get("offset")!);
   }
-  const todosResponse = await fetch(
-    `/api/todo?${passthroughParams.toString()}`,
-  );
+  const todosResponse = await fetch(`/api/todo?${passthroughParams.toString()}`);
+  if (!todosResponse.ok) {
+    throw new Response("Failed to load todos", { status: todosResponse.status });
+  }
   const { todos } = (await todosResponse.json()) as ListTodosResponse;
   return { todos };
 }
@@ -47,12 +41,14 @@ class TodoFacade {
     return await fetch("/api/todo", {
       body: JSON.stringify(request),
       method: "POST",
+      headers: { "Content-Type": "application/json" },
     }).then((r) => r.json());
   }
   static async updateTodo(id: number, request: UpdateTodoRequest) {
     return await fetch(`/api/todo/${id}`, {
       body: JSON.stringify(request),
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
     }).then((r) => r.json());
   }
   static async deleteTodo(id: number) {
@@ -74,18 +70,16 @@ export async function clientAction(args: Route.ClientActionArgs) {
   switch (action) {
     case "create": {
       const title = formData.get("title");
-      if (!title || typeof title !== "string")
-        return { error: true, message: "No Title" };
+      if (!title || typeof title !== "string") return { error: true, message: "No Title" };
       return { create: await TodoFacade.createTodo({ title }) };
     }
     case "update": {
       const title = formData.get("title");
       const checkedDate = formData.get("checkedDate");
       const id = formData.get("id");
-      if (!id || typeof id !== "string")
-        return { error: true, message: "No id provided" };
+      if (!id || typeof id !== "string") return { error: true, message: "No id provided" };
       return {
-        update: await TodoFacade.updateTodo(parseInt(id), {
+        update: await TodoFacade.updateTodo(parseInt(id, 10), {
           title: typeof title === "string" ? title : undefined,
           checkedDate: checkedDate === "null" ? null : (checkedDate as string),
         }),
@@ -93,9 +87,8 @@ export async function clientAction(args: Route.ClientActionArgs) {
     }
     case "delete": {
       const id = formData.get("id");
-      if (!id || typeof id !== "string")
-        return { error: true, message: "No id provided" };
-      return { delete: await TodoFacade.deleteTodo(parseInt(id)) };
+      if (!id || typeof id !== "string") return { error: true, message: "No id provided" };
+      return { delete: await TodoFacade.deleteTodo(parseInt(id, 10)) };
     }
     case "export": {
       const { url } = await TodoFacade.exportTodos();
@@ -104,11 +97,7 @@ export async function clientAction(args: Route.ClientActionArgs) {
   }
 }
 
-function EmptyTodos({
-  onCreateTodo,
-}: {
-  onCreateTodo: (title: string) => void;
-}) {
+function EmptyTodos({ onCreateTodo }: { onCreateTodo: (title: string) => void }) {
   return (
     <Empty className="border border-dashed">
       <EmptyHeader>
@@ -149,10 +138,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   const handleToggleComplete = (id: number, isCompleted: boolean) => {
     const checkedDate = isCompleted ? "null" : new Date().toISOString();
-    fetcher.submit(
-      { action: "update", id: id.toString(), checkedDate },
-      { method: "post" },
-    );
+    fetcher.submit({ action: "update", id: id.toString(), checkedDate }, { method: "post" });
   };
 
   const handleDeleteTodo = (id: number) => {
@@ -160,10 +146,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   };
 
   const handleUpdateTitle = (id: number, title: string) => {
-    fetcher.submit(
-      { action: "update", id: id.toString(), title },
-      { method: "post" },
-    );
+    fetcher.submit({ action: "update", id: id.toString(), title }, { method: "post" });
   };
 
   return (
@@ -180,10 +163,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <RiDownloadLine />
             {isExporting ? "Exporting..." : "Export"}
           </Button>
-          <CreateTodoDialog
-            onCreateTodo={handleCreateTodo}
-            isLoading={isLoading}
-          />
+          <CreateTodoDialog onCreateTodo={handleCreateTodo} isLoading={isLoading} />
         </div>
       </div>
       <DataTable

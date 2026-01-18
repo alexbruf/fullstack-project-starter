@@ -1,9 +1,9 @@
-import { Resend } from "resend";
-import { EmailTemplate } from "~/emails/new-todo-complete";
-import z from "zod";
 import type { Kysely } from "kysely";
-import { getDB, type Database } from "../db";
+import { Resend } from "resend";
+import z from "zod";
 import { DailyEmail } from "~/emails/daily-email";
+import { EmailTemplate } from "~/emails/new-todo-complete";
+import { type Database, getDB } from "../db";
 
 export const newlyCompletedTodoMessageSchema = z.object({
   email: z.email(),
@@ -26,15 +26,17 @@ function aDayAgo() {
 export class QueueManager {
   private resend: Resend;
   private dbProm: Promise<Kysely<Database>>;
+  private fromEmail: string;
+
   constructor(env: Env) {
     this.resend = new Resend(env.RESEND_API_KEY);
     this.dbProm = getDB(env);
+    this.fromEmail = env.EMAIL_FROM || "Todo App <no-reply@example.com>";
   }
-  async newlyCompletedTodo(
-    todo: z.infer<typeof newlyCompletedTodoMessageSchema>,
-  ) {
+
+  async newlyCompletedTodo(todo: z.infer<typeof newlyCompletedTodoMessageSchema>) {
     const { error } = await this.resend.emails.send({
-      from: "Serp <no-reply@serpbear.viewengine.ai>",
+      from: this.fromEmail,
       to: [todo.email],
       subject: "New Todo Completed!",
       react: <EmailTemplate title={todo.title} />,
@@ -53,7 +55,7 @@ export class QueueManager {
       .execute();
 
     const { error } = await this.resend.emails.send({
-      from: "Serp <no-reply@serpbear.viewengine.ai>",
+      from: this.fromEmail,
       to: [user.email],
       subject: `Daily Summary of Completed Todos: ${dateFormatter.format(new Date())}`,
       react: <DailyEmail todos={todos.map((t) => t.title)} />,

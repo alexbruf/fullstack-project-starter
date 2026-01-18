@@ -1,0 +1,10 @@
+{
+  "description": "Core module inventory - update when adding/removing modules",
+  "modules": {
+    "api": ["api.ts", "app.ts"],
+    "lib": ["db.ts", "utils.ts"],
+    "lib/background": ["queue.tsx"],
+    "workers": ["app.ts", "cron.ts", "queue.tsx"],
+    "emails": ["daily-email.tsx", "new-todo-complete.tsx"]
+  }
+}

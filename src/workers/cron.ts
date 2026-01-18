@@ -1,4 +1,4 @@
-import { createClerkClient, type ClerkClient } from "@clerk/backend";
+import { createClerkClient } from "@clerk/backend";
 import type { QueueMessage } from "./queue";
 
 export default {
