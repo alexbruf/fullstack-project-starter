@@ -40,6 +40,7 @@
       "!**/dist",
       "!**/build",
       "!**/.react-router",
+      "!**/.claude",
       "!**/coverage",
       "!**/*.d.ts",
       "!**/worker-configuration.d.ts"

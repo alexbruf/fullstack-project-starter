@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(bunx shadcn@latest add:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(wc:*)",
+      "Bash(bunx biome:*)",
+      "Web Search(*)",
+      "Fetch(*)",
+    ]
+  }
+}
