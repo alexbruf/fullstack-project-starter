@@ -193,7 +193,129 @@ Need to catch "I added a feature but forgot to test/document it" scenarios.
 
 ## Project Decisions
 
-<!-- Add your project-specific architectural decisions below -->
+These document architectural choices specific to this project.
+
+---
+
+### Biome over ESLint + Prettier
+
+**Date:** 2026-01-18
+**Status:** Accepted
+
+#### Decision
+Use Biome as the single tool for linting and formatting instead of ESLint + Prettier.
+
+#### Context
+Need consistent code quality tooling that works well with Bun and modern tooling.
+
+#### Alternatives Considered
+| Option | Pros | Cons |
+|--------|------|------|
+| ESLint + Prettier | Industry standard, extensive plugins | Two tools, slower, complex config |
+| **Biome (chosen)** | Single tool, 10-100x faster, simple config | Fewer plugins, newer ecosystem |
+| dprint | Very fast | Less lint coverage |
+
+#### Rationale
+- Single config file vs multiple configs
+- Rust-based performance matches Bun's philosophy
+- Tailwind CSS support built-in
+- Simpler CI/CD pipeline
+
+#### Trade-offs
+- Fewer ESLint plugins available
+- Team may need to learn new tool
+
+---
+
+### Vitest over Jest
+
+**Date:** 2026-01-18
+**Status:** Accepted
+
+#### Decision
+Use Vitest as the test framework instead of Jest.
+
+#### Context
+Need a test framework that integrates well with Vite and supports modern TypeScript.
+
+#### Alternatives Considered
+| Option | Pros | Cons |
+|--------|------|------|
+| Jest | Industry standard, mature | Requires separate config, slower |
+| **Vitest (chosen)** | Native Vite integration, fast, ESM-first | Newer, smaller ecosystem |
+| Bun test | Built into Bun | Less mature, fewer features |
+
+#### Rationale
+- Shares Vite config (no duplicate setup)
+- First-class ESM and TypeScript support
+- Compatible with Jest API (easy migration)
+- Faster test execution
+
+#### Trade-offs
+- Smaller ecosystem than Jest
+- Some Jest plugins may not work
+
+---
+
+### Hono over Express/Fastify
+
+**Date:** 2026-01-18
+**Status:** Accepted
+
+#### Decision
+Use Hono as the API framework on Cloudflare Workers.
+
+#### Context
+Need a lightweight, edge-compatible web framework for API routes.
+
+#### Alternatives Considered
+| Option | Pros | Cons |
+|--------|------|------|
+| Express | Most popular, huge ecosystem | Not designed for edge, heavy |
+| Fastify | Fast, good DX | Node.js focused |
+| **Hono (chosen)** | Edge-first, tiny, multi-runtime | Smaller ecosystem |
+| itty-router | Minimal | Too minimal for larger apps |
+
+#### Rationale
+- Built for Cloudflare Workers
+- Works across Bun, Deno, Node.js, edge
+- Middleware ecosystem (including @hono/clerk-auth)
+- TypeScript-first
+
+#### Trade-offs
+- Smaller community than Express
+- Fewer middleware options
+
+---
+
+### Kysely over Drizzle/Prisma
+
+**Date:** 2026-01-18
+**Status:** Accepted
+
+#### Decision
+Use Kysely as the SQL query builder for D1.
+
+#### Context
+Need type-safe database access that works with Cloudflare D1 (SQLite).
+
+#### Alternatives Considered
+| Option | Pros | Cons |
+|--------|------|------|
+| Prisma | Popular, great DX | Heavy, D1 support limited |
+| Drizzle | Lightweight, good types | Newer, D1 dialect evolving |
+| **Kysely (chosen)** | Mature, excellent D1 support | More verbose than ORMs |
+| Raw SQL | No dependencies | No type safety |
+
+#### Rationale
+- First-class D1 support via kysely-d1
+- Type-safe query building
+- Lightweight (important for Workers)
+- SQL-like syntax (no abstraction leakage)
+
+#### Trade-offs
+- More verbose than Prisma/Drizzle
+- No automatic migrations
 
 ---
 
