@@ -329,6 +329,242 @@ Before modifying code that "should work":
 
 ---
 
+## Common Development Tasks
+
+### Adding a Database Field/Table
+
+1. **Create migration:**
+   ```bash
+   bun run migrations:create add-field-to-todo
+   ```
+
+2. **Edit the migration file** in `migrations/`:
+   ```sql
+   -- migrations/0003_add-field-to-todo.sql
+   ALTER TABLE todo ADD COLUMN priority INTEGER DEFAULT 0;
+   ```
+
+3. **Update the type definition** in `src/lib/db.ts`:
+   ```typescript
+   export interface TodoTable {
+     id: Generated<number>;
+     user_id: string;
+     title: string;
+     priority: number;  // Add new field
+     // ...
+   }
+   ```
+
+4. **Apply migration:**
+   ```bash
+   bun run migrations:apply --local   # Local dev
+   bun run migrations:apply --remote  # Production
+   ```
+
+5. **Update inventory** if adding new tables → `tests/module-inventory.json`
+
+---
+
+### Adding an API Route
+
+1. **Add route to `src/api/api.ts`:**
+   ```typescript
+   // GET /api/todo/stats - Get todo statistics
+   api.get("/todo/stats", async (c) => {
+     const auth = getAuthOrThrow(c);
+     const db = await getDB(c.env);
+
+     const stats = await db
+       .selectFrom("todo")
+       .select(db.fn.count("id").as("total"))
+       .where("user_id", "=", auth.userId!)
+       .executeTakeFirst();
+
+     return c.json({ stats });
+   });
+   ```
+
+2. **Export types** for frontend consumption:
+   ```typescript
+   export type TodoStatsResponse = { stats: { total: number } };
+   ```
+
+3. **Update endpoint inventory** (`tests/endpoint-inventory.json`):
+   ```json
+   {
+     "method": "GET",
+     "path": "/api/todo/stats",
+     "description": "Get todo statistics for authenticated user"
+   }
+   ```
+
+4. **Run tests** to verify inventory matches:
+   ```bash
+   bun run test
+   ```
+
+---
+
+### Data Fetching Patterns
+
+Choose the right pattern based on your use case:
+
+| Pattern | When to Use | Example |
+|---------|-------------|---------|
+| **Loader (BFF)** | Page data, SEO, initial load | Todo list on page load |
+| **Client Fetcher** | User interactions, mutations | Create/update/delete todo |
+| **Direct API** | External clients, webhooks | Mobile app, third-party |
+
+#### Pattern 1: Loader (Backend for Frontend)
+
+Use React Router loaders for page data. Data is fetched server-side, SEO-friendly.
+
+```typescript
+// src/routes/home/page.tsx
+import type { Route } from "./+types/page";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const response = await fetch(`${new URL(request.url).origin}/api/todo`);
+  return response.json();
+}
+
+export default function Page({ loaderData }: Route.ComponentProps) {
+  const { todos } = loaderData;
+  return <TodoList todos={todos} />;
+}
+```
+
+**When to use:**
+- Initial page data
+- Data needed for SEO/meta tags
+- Data that doesn't change frequently
+
+#### Pattern 2: Client Fetcher (useFetcher)
+
+Use React Router's `useFetcher` for mutations and client-side updates.
+
+```typescript
+// src/routes/home/page.tsx
+import { useFetcher } from "react-router";
+
+function CreateTodo() {
+  const fetcher = useFetcher();
+  const isSubmitting = fetcher.state === "submitting";
+
+  return (
+    <fetcher.Form method="post" action="/api/todo">
+      <input name="title" required />
+      <button disabled={isSubmitting}>
+        {isSubmitting ? "Creating..." : "Create"}
+      </button>
+    </fetcher.Form>
+  );
+}
+```
+
+**When to use:**
+- Form submissions
+- Optimistic UI updates
+- Actions that modify data
+
+#### Pattern 3: Direct fetch (Client-Side)
+
+Use plain `fetch` for dynamic client-side data or when you need more control.
+
+```typescript
+// Client-side fetch with state
+function TodoStats() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/todo/stats")
+      .then(r => r.json())
+      .then(setStats);
+  }, []);
+
+  if (!stats) return <Skeleton />;
+  return <div>Total: {stats.total}</div>;
+}
+```
+
+**When to use:**
+- Polling/real-time data
+- Data not needed for initial render
+- Complex client-side state management
+
+#### Decision Guide
+
+```
+Is this data needed for initial page render?
+├── Yes → Use Loader (Pattern 1)
+└── No
+    ├── Is this a form submission/mutation?
+    │   └── Yes → Use Fetcher (Pattern 2)
+    └── Is this dynamic/polling data?
+        └── Yes → Use Direct Fetch (Pattern 3)
+```
+
+---
+
+### Adding a UI Component
+
+1. **Use shadcn/ui CLI** for standard components:
+   ```bash
+   bunx shadcn@latest add dialog
+   ```
+
+2. **For custom components**, create in `src/components/`:
+   ```typescript
+   // src/components/todo-card.tsx
+   export function TodoCard({ todo }: { todo: Todo }) {
+     return (
+       <Card>
+         <CardHeader>{todo.title}</CardHeader>
+       </Card>
+     );
+   }
+   ```
+
+3. **Update component inventory** (`tests/component-inventory.json`):
+   - UI components go in `components.ui[]`
+   - Feature components go in `components.feature[]`
+
+---
+
+### Adding Email Templates
+
+1. **Create template** in `src/emails/`:
+   ```tsx
+   // src/emails/welcome.tsx
+   export function WelcomeEmail({ name }: { name: string }) {
+     return (
+       <Html>
+         <Body>
+           <Text>Welcome, {name}!</Text>
+         </Body>
+       </Html>
+     );
+   }
+   ```
+
+2. **Send via queue** in your API route:
+   ```typescript
+   await c.env.EMAIL_QUEUE.send({
+     welcome: { email: user.email, name: user.name }
+   });
+   ```
+
+3. **Handle in queue consumer** (`src/workers/queue.tsx`):
+   ```typescript
+   if ("welcome" in message) {
+     await queueManager.sendWelcomeEmail(message.welcome);
+   }
+   ```
+
+4. **Update module inventory** if adding new email template.
+
+---
+
 ## Git Workflow
 
 ### Commit Message Format
