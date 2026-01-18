@@ -407,17 +407,18 @@ Before modifying code that "should work":
 
 ### Data Fetching Patterns
 
-Choose the right pattern based on your use case:
+React Router provides integrated data loading. **Avoid raw `fetch` with `useEffect`** - use these patterns instead:
 
 | Pattern | When to Use | Example |
 |---------|-------------|---------|
-| **Loader (BFF)** | Page data, SEO, initial load | Todo list on page load |
-| **Client Fetcher** | User interactions, mutations | Create/update/delete todo |
-| **Direct API** | External clients, webhooks | Mobile app, third-party |
+| **loader** | Initial page data, SSR, SEO | Todo list on page load |
+| **clientLoader** | Client-side navigation, skip server | Cached data, external APIs |
+| **useFetcher.Form** | Mutations without navigation | Create/update/delete |
+| **useFetcher.load()** | Load data without navigation | Polling, search, dynamic UI |
 
-#### Pattern 1: Loader (Backend for Frontend)
+#### Pattern 1: Server Loader (SSR)
 
-Use React Router loaders for page data. Data is fetched server-side, SEO-friendly.
+Use `loader` for initial page data. Runs on server during SSR.
 
 ```typescript
 // src/routes/home/page.tsx
@@ -435,16 +436,72 @@ export default function Page({ loaderData }: Route.ComponentProps) {
 ```
 
 **When to use:**
-- Initial page data
-- Data needed for SEO/meta tags
-- Data that doesn't change frequently
+- Initial page data needed for render
+- SEO-critical content
+- Data that should be ready before paint
 
-#### Pattern 2: Client Fetcher (useFetcher)
+#### Pattern 2: Client Loader (Skip Server Hop)
 
-Use React Router's `useFetcher` for mutations and client-side updates.
+Use `clientLoader` for client-side navigations. Can call `serverLoader()` or fetch directly.
 
 ```typescript
-// src/routes/home/page.tsx
+// src/routes/products/page.tsx
+import type { Route } from "./+types/page";
+
+// Server loader for initial SSR
+export async function loader({ request }: Route.LoaderArgs) {
+  return fetchFromDb(request);
+}
+
+// Client loader for subsequent navigations (skips server)
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  // Option A: Call server loader
+  return serverLoader();
+
+  // Option B: Fetch directly from client (skip server hop)
+  // return fetch("/api/products").then(r => r.json());
+}
+```
+
+**When to use:**
+- Client-side navigation optimization
+- Caching strategies
+- Direct API calls from browser (skip BFF)
+
+#### Pattern 3: Client-Only Loader
+
+For data that should only load on the client (no SSR).
+
+```typescript
+// src/routes/dashboard/page.tsx
+import type { Route } from "./+types/page";
+
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const res = await fetch("/api/dashboard/stats");
+  return res.json();
+}
+clientLoader.hydrate = true; // Run during hydration
+
+// Show while clientLoader is running
+export function HydrateFallback() {
+  return <DashboardSkeleton />;
+}
+
+export default function Dashboard({ loaderData }: Route.ComponentProps) {
+  return <Stats data={loaderData} />;
+}
+```
+
+**When to use:**
+- User-specific data not needed for SSR
+- Data from browser-only APIs
+- Reduced server load
+
+#### Pattern 4: Fetcher for Mutations
+
+Use `useFetcher` for form submissions without navigation.
+
+```typescript
 import { useFetcher } from "react-router";
 
 function CreateTodo() {
@@ -464,45 +521,101 @@ function CreateTodo() {
 
 **When to use:**
 - Form submissions
+- Inline mutations (toggle, delete)
 - Optimistic UI updates
-- Actions that modify data
 
-#### Pattern 3: Direct fetch (Client-Side)
+#### Pattern 5: Fetcher for Loading Data
 
-Use plain `fetch` for dynamic client-side data or when you need more control.
+Use `fetcher.load()` for dynamic data without navigation. **This replaces raw `fetch` + `useEffect`.**
 
 ```typescript
-// Client-side fetch with state
-function TodoStats() {
-  const [stats, setStats] = useState(null);
+import { useFetcher } from "react-router";
+import { useEffect } from "react";
+
+// Dynamic search results
+function SearchResults({ query }: { query: string }) {
+  const fetcher = useFetcher();
 
   useEffect(() => {
-    fetch("/api/todo/stats")
-      .then(r => r.json())
-      .then(setStats);
-  }, []);
+    if (query) {
+      fetcher.load(`/api/search?q=${encodeURIComponent(query)}`);
+    }
+  }, [query, fetcher]);
 
-  if (!stats) return <Skeleton />;
-  return <div>Total: {stats.total}</div>;
+  if (fetcher.state === "loading") return <Spinner />;
+  return <Results data={fetcher.data} />;
+}
+
+// Polling for notifications
+function NotificationBell() {
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetcher.load("/api/notifications");
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [fetcher]);
+
+  const count = fetcher.data?.count || 0;
+  return <Bell count={count} />;
 }
 ```
 
 **When to use:**
-- Polling/real-time data
-- Data not needed for initial render
-- Complex client-side state management
+- Search/typeahead
+- Polling/real-time updates
+- Combobox/autocomplete
+- Any data loading without navigation
 
 #### Decision Guide
 
 ```
 Is this data needed for initial page render?
-├── Yes → Use Loader (Pattern 1)
-└── No
-    ├── Is this a form submission/mutation?
-    │   └── Yes → Use Fetcher (Pattern 2)
-    └── Is this dynamic/polling data?
-        └── Yes → Use Direct Fetch (Pattern 3)
+├── Yes
+│   ├── Need SSR/SEO? → loader (Pattern 1)
+│   └── Client-only OK? → clientLoader + HydrateFallback (Pattern 3)
+└── No (dynamic/interactive)
+    ├── Is this a mutation? → fetcher.Form (Pattern 4)
+    └── Is this data loading? → fetcher.load() (Pattern 5)
+
+For client-side navigation optimization:
+└── Use clientLoader (Pattern 2) to skip server hop
 ```
+
+#### Anti-Pattern: Raw fetch + useEffect
+
+❌ **Avoid this pattern** - it bypasses React Router's data flow:
+
+```typescript
+// DON'T DO THIS
+function BadComponent() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    fetch("/api/data").then(r => r.json()).then(setData);
+  }, []);
+  return <div>{data}</div>;
+}
+```
+
+✅ **Do this instead** - use `fetcher.load()`:
+
+```typescript
+// DO THIS
+function GoodComponent() {
+  const fetcher = useFetcher();
+  useEffect(() => {
+    fetcher.load("/api/data");
+  }, [fetcher]);
+  return <div>{fetcher.data}</div>;
+}
+```
+
+**Why fetcher.load() is better:**
+- Integrates with React Router's revalidation
+- Automatic loading/error states via `fetcher.state`
+- Works with route loaders (not just API endpoints)
+- Proper Suspense integration
 
 ---
 
