@@ -10,8 +10,10 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": [
-        "./worker-configuration.d.ts"
-    ]
+    "types": ["./worker-configuration.d.ts"],
+    "rootDirs": [".", "./.react-router/types"],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   }
 }

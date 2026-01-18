@@ -1,4 +1,8 @@
-import type { AppLoadContext, EntryContext, RouterContextProvider } from "react-router";
+import type {
+  AppLoadContext,
+  EntryContext,
+  RouterContextProvider,
+} from "react-router";
 import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
@@ -25,7 +29,7 @@ export default async function handleRequest(
           console.error(error);
         }
       },
-    }
+    },
   );
   shellRendered = true;
 
