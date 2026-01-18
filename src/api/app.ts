@@ -1,13 +1,15 @@
-import {Hono} from "hono";
-import {createRequestHandler, RouterContextProvider} from "react-router";
-import {apiFetchContext, envContext} from "~/context";
+import { Hono } from "hono";
+import { createRequestHandler, RouterContextProvider } from "react-router";
+import { apiFetchContext, envContext } from "~/context";
 
 import api from "./api";
 
 const requestHandler = createRequestHandler(
-    () => import("virtual:react-router/server-build"), import.meta.env.MODE);
+  () => import("virtual:react-router/server-build"),
+  import.meta.env.MODE,
+);
 
-const app = new Hono<{Bindings : Env}>();
+const app = new Hono<{ Bindings: Env }>();
 
 app.route("/api", api);
 app.all("*", async (c) => {
@@ -18,18 +20,17 @@ app.all("*", async (c) => {
       url = new URL(url, c.req.url).toString();
     }
     let request = input instanceof Request ? input : new Request(url, init);
-		const finalRequestUrl = new URL(request.url);
-		const isAPIRoute = finalRequestUrl.pathname.startsWith("/api/");
-		if(isAPIRoute) {
-			// passthrough headers from original request to preserve auth info
-			// if headers included in init, those take precedence
-			if (!init?.headers) {
-				let init2 = init || {};
-				init2.headers = new Headers(c.req.raw.headers);
-				request = new Request(request, init2);
-			}
-		}
-		
+    const finalRequestUrl = new URL(request.url);
+    const isAPIRoute = finalRequestUrl.pathname.startsWith("/api/");
+    if (isAPIRoute) {
+      // passthrough headers from original request to preserve auth info
+      // if headers included in init, those take precedence
+      if (!init?.headers) {
+        let init2 = init || {};
+        init2.headers = new Headers(c.req.raw.headers);
+        request = new Request(request, init2);
+      }
+    }
 
     return app.fetch(request, c.env, c.executionCtx);
   };

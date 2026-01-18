@@ -1,0 +1,2 @@
+-- Migration number: 0002 	 2026-01-18T01:28:41.030Z
+ALTER TABLE todo ADD COLUMN title VARCHAR(255);
