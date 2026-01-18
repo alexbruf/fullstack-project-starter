@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to [Project Name] will be documented in this file.
+All notable changes to the Fullstack Project Starter will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,45 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial project scaffolding
-- Documentation structure (CLAUDE.md, docs/, tasks/)
-- **Environment documentation:** `docs/DEV_ENVIRONMENT.md` for servers, ports, startup order
-- **Troubleshooting guide:** `docs/TROUBLESHOOTING.md` with debugging methodology as opening requirement
-- **Debugging methodology sections:** Clean Slate First, Multi-Service Debugging
-- **Health check guidance:** Functional checks vs health checks distinction in DEV_ENVIRONMENT.md
-- **Rule 13 (Governance):** CLAUDE.md is now a protected file requiring human approval
-- **Pre-commit hook:** Blocks CLAUDE.md changes, requires `--no-verify` after human review
-- **Glossary:** `docs/GLOSSARY.md` with terminology definitions (session, burst, context, checkpoint, etc.)
-- **Before Writing New Code:** Search-first checklist in CONTRIBUTING.md with common patterns to look for
-- **API Property Troubleshooting:** Known issue entry for "property doesn't exist" casing problems
-- **Estimate Before Adding:** Line count estimation guidance before adding significant code
+- **Bootstrap scaffolding:** Complete project setup with quality gates
+  - Biome for linting and formatting (replaces ESLint + Prettier)
+  - Vitest for testing with inventory drift detection
+  - Husky pre-commit hooks for automated quality checks
+  - File length checker (300-line limit enforcement)
+- **Inventory files:** Drift detection for endpoints, components, and modules
+  - `tests/endpoint-inventory.json` - 8 API endpoints
+  - `tests/component-inventory.json` - 16 UI + 2 feature components
+  - `tests/module-inventory.json` - Core modules by directory
+- **Documentation:** Complete docs/ folder structure
+  - `ARCHITECTURE.md` - System design and data flow
+  - `DEV_ENVIRONMENT.md` - Local development setup
+  - `CONTRIBUTING.md` - Code standards and workflow
+  - `TROUBLESHOOTING.md` - Debugging methodology
+  - `INTEGRATIONS.md` - External service documentation
+  - `DECISIONS.md` - Architecture decision records
+- **README:** Comprehensive project documentation with setup guide
 
 ### Changed
-- **Before Committing Checklist:** Expanded to include all documentation files, organized by category (core, user-facing, technical, learning, planning)
-- **Rules 1 & 2:** Now explicitly trigger on compaction (re-read governance files after context compaction)
-- **Prediction Protocol:** DOING/EXPECT/RESULT pattern added to TROUBLESHOOTING.md
-- **Staging Discipline:** "git add . is forbidden" formalized in CONTRIBUTING.md
-- **Batch Size:** "3 actions, then checkpoint" - more aggressive verification cadence
-- **Completion Bias Warning:** Added to CLAUDE.md preamble
-
-### Documented
-- **Completion Bias Patterns:** LESSONS-LEARNED entry documenting three failure modes - skipped prediction protocol, code duplication before reuse check, reactive file splits
-
-### Fixed
-<!-- List bug fixes -->
-
-### Removed
-<!-- List removed features/files -->
+- **Code formatting:** All source files reformatted with Biome
+- **TypeScript:** Fixed TableMeta type augmentation in columns.tsx
 
 ---
 
-## [0.1.0] - YYYY-MM-DD
+## [0.1.0] - 2026-01-18
 
 ### Added
-- Initial release
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
+- **Todo CRUD:** Create, read, update, delete todos
+- **Authentication:** Clerk integration for user auth
+- **Email notifications:** Resend integration for transactional email
+  - Email on todo completion (Queue example)
+  - Daily summary email (Cron example)
+- **CSV Export:** Export todos to R2 bucket
+- **Tech stack:**
+  - React 19 + React Router v7 (SSR)
+  - Hono on Cloudflare Workers
+  - Cloudflare D1 (database), R2 (storage), Queues
+  - Tailwind CSS v4 + shadcn/ui
 
 ---
 
@@ -54,39 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| 0.1.0 | YYYY-MM-DD | Initial release |
+| 0.1.0 | 2026-01-18 | Initial todo app with Cloudflare stack |
 
 ---
 
-## Changelog Entry Guidelines
-
-### Entry Format
-```markdown
-### [Category]
-- **[Feature/Area]:** Description of change
-  - Sub-detail if needed
-  - Another sub-detail
-```
-
-### Categories
-- **Added** - New features
-- **Changed** - Changes to existing functionality
-- **Deprecated** - Features to be removed in future
-- **Removed** - Removed features
-- **Fixed** - Bug fixes
-- **Security** - Security-related changes
-
-### Good Entry Examples
-```markdown
-### Added
-- **User Authentication:** JWT-based login with refresh tokens
-  - Login endpoint at POST /api/auth/login
-  - Token refresh at POST /api/auth/refresh
-
-### Fixed
-- **Data Export:** Fixed Excel export failing for large datasets (>10k rows)
-```
-
----
-
-*Last Updated: [Date]*
+*Last Updated: 2026-01-18*
