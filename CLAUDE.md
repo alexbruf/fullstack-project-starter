@@ -167,6 +167,7 @@ Hono
 | `docs/ARCHITECTURE.md` | Project structure, data flow, API endpoints | Session start, before structural changes |
 | `docs/DECISIONS.md` | Why we chose X over Y (decision records) | Before proposing architectural changes |
 | `docs/CONTRIBUTING.md` | Code standards, file limits, testing, patterns | Before writing code |
+| `docs/guides/development.md` | How-to guides: API routes, data fetching, DB, UI | When implementing features |
 | `docs/LESSONS-LEARNED.md` | Historical mistakes (append-only) | Before any refactor/migration |
 | `docs/INTEGRATIONS.md` | External API auth, troubleshooting | When working on external integrations |
 | `docs/USER_GUIDE.md` | End-user documentation | Reference for UI questions |

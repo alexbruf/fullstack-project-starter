@@ -31,7 +31,7 @@ export class QueueManager {
   constructor(env: Env) {
     this.resend = new Resend(env.RESEND_API_KEY);
     this.dbProm = getDB(env);
-    this.fromEmail = env.EMAIL_FROM || "Todo App <no-reply@example.com>";
+    this.fromEmail = env.EMAIL_FROM || "Todo App <noreply@example.com>";
   }
 
   async newlyCompletedTodo(todo: z.infer<typeof newlyCompletedTodoMessageSchema>) {

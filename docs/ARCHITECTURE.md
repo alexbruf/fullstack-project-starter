@@ -9,6 +9,7 @@ Fullstack Project Starter is a Todo application demonstrating a modern fullstack
 ## Tech Stack
 
 - **Frontend:** React 19 + React Router v7 (SSR via Vite)
+- **Data Fetching:** React Router loaders (route-level), TanStack Query (component-level)
 - **Backend:** Hono on Cloudflare Workers
 - **Database:** Cloudflare D1 (SQLite) via Kysely
 - **Storage:** Cloudflare R2 (for CSV exports)
@@ -111,18 +112,50 @@ Fullstack Project Starter is a Todo application demonstrating a modern fullstack
 
 ## Key Patterns
 
+### API-First Design (Hono)
+
+**All features are built API-first.** The React frontend is just one consumer of the API.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Hono API                              │
+│                    (src/api/api.ts)                         │
+├─────────────────────────────────────────────────────────────┤
+│  • All business logic lives here                            │
+│  • Zod validation for all inputs                            │
+│  • Type exports for consumers                               │
+│  • Supports session auth (frontend) + API keys (external)   │
+└─────────────────────────────────────────────────────────────┘
+          ▲                    ▲                    ▲
+          │                    │                    │
+    React Router          Mobile App           CLI / Scripts
+    (frontend)            (future)             (automation)
+```
+
+**Why API-first:**
+- Frontend is decoupled from business logic
+- External integrations get full functionality
+- Testable without UI
+- Mobile/CLI clients work out of the box
+
 ### Authentication
-All API routes use Clerk middleware. Protected routes call `getAuthOrThrow()`:
+
+All API routes use Clerk middleware. Auth works for both frontend sessions and external API keys:
 
 ```typescript
 function getAuthOrThrow(c: Context) {
-  const auth = getAuth(c, { acceptsToken: "api_key" });
+  const auth = getAuth(c, { acceptsToken: "api_key" });  // Session OR API key
   if (!auth.isAuthenticated) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
   return auth;
 }
 ```
+
+| Client | Auth Method |
+|--------|-------------|
+| React frontend | Session cookie (automatic) |
+| External API | `Authorization: Bearer <api_key>` |
 
 ### Database Access
 Kysely with D1Dialect for type-safe SQL:

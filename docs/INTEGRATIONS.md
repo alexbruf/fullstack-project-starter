@@ -269,7 +269,7 @@ CLERK_SECRET_KEY=sk_test_...
 
 # Resend
 RESEND_API_KEY=re_...
-EMAIL_FROM=App Name <noreply@domain.com>
+EMAIL_FROM=Todo App <noreply@yourdomain.com>
 ```
 
 ### Key Files

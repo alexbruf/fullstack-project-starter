@@ -257,6 +257,38 @@ Need a test framework that integrates well with Vite and supports modern TypeScr
 
 ---
 
+### API-First Architecture with Hono
+
+**Date:** 2026-01-18
+**Status:** Accepted
+
+#### Decision
+Build all features API-first using Hono. The frontend is a consumer of the API, not the source of truth.
+
+#### Context
+Need an architecture where the app is fully controllable via API, not just the frontend UI.
+
+#### Alternatives Considered
+| Option | Pros | Cons |
+|--------|------|------|
+| Frontend-first (React actions) | Simpler for UI-only apps | Can't automate, no external access |
+| Backend-for-frontend only | Optimized for UI | Tight coupling, duplicate logic for API |
+| **API-first (chosen)** | Full external access, testable | Slightly more boilerplate |
+
+#### Rationale
+- External clients (mobile, CLI, integrations) get full functionality
+- Business logic is centralized and testable without UI
+- Frontend remains thin - just consumes API
+- Auth supports both session (frontend) and API keys (external) via `acceptsToken: "api_key"`
+- Type exports (`export type XResponse`) give frontend type safety
+
+#### Trade-offs
+- More boilerplate than inline React actions
+- Must maintain API inventory
+- Must think about external consumers when designing endpoints
+
+---
+
 ### Hono over Express/Fastify
 
 **Date:** 2026-01-18
@@ -266,7 +298,7 @@ Need a test framework that integrates well with Vite and supports modern TypeScr
 Use Hono as the API framework on Cloudflare Workers.
 
 #### Context
-Need a lightweight, edge-compatible web framework for API routes.
+Need a lightweight, edge-compatible web framework for API-first architecture.
 
 #### Alternatives Considered
 | Option | Pros | Cons |
@@ -316,6 +348,54 @@ Need type-safe database access that works with Cloudflare D1 (SQLite).
 #### Trade-offs
 - More verbose than Prisma/Drizzle
 - No automatic migrations
+
+---
+
+### Data Fetching: React Router + TanStack Query
+
+**Date:** 2026-01-18
+**Status:** Accepted
+
+#### Decision
+Use React Router loaders/actions for route-level data and TanStack Query for component-level client-side data fetching.
+
+#### Context
+Need a clear strategy for data fetching that handles SSR, client-side caching, and dynamic UI without conflicting patterns.
+
+#### Alternatives Considered
+| Option | Pros | Cons |
+|--------|------|------|
+| React Router only | Single paradigm, route integration | No caching, awkward for non-route data |
+| TanStack Query only | Powerful caching, great DX | Misses RR SSR benefits, route integration lost |
+| **Both (chosen)** | Best of both worlds | Two systems to learn |
+| Raw fetch + useEffect | Simple, no deps | No caching, loading state boilerplate |
+| SWR | Simpler API | Less powerful than TanStack Query |
+
+#### Rationale
+
+**React Router excels at:**
+- SSR data loading (critical for SEO, initial paint)
+- Route-based data coordination (data ready before render)
+- Navigation-triggered fetching (no waterfalls)
+- Mutations that should revalidate route loaders
+
+**TanStack Query excels at:**
+- Component-level caching (shared data across components)
+- Background refetching (stale-while-revalidate)
+- Polling and real-time updates
+- Optimistic mutations with rollback
+- Request deduplication
+
+**The boundary is clear:**
+- "Data appears when you navigate to the page" → React Router
+- "Data is fetched by a component wherever it lives" → TanStack Query
+- "Mutation should refresh the whole route" → fetcher.Form
+- "Mutation should update cache and show optimistic UI" → useMutation
+
+#### Trade-offs
+- Two data fetching paradigms to understand
+- Need clear documentation on when to use which
+- TanStack Query adds bundle size (~12KB gzipped)
 
 ---
 

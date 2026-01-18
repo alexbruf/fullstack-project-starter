@@ -10,7 +10,7 @@
   "main": "./src/workers/app.ts",
   "vars": {
     "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
-    "EMAIL_FROM": "Todo App <no-reply@example.com>"
+    "EMAIL_FROM": "Todo App <noreply@example.com>"
   },
   "observability": {
     "enabled": true
