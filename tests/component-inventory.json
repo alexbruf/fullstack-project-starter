@@ -1,0 +1,24 @@
+{
+  "description": "UI component inventory - update when adding/removing components",
+  "components": {
+    "ui": [
+      "alert-dialog",
+      "badge",
+      "button",
+      "card",
+      "checkbox",
+      "combobox",
+      "dropdown-menu",
+      "empty",
+      "field",
+      "input",
+      "input-group",
+      "label",
+      "select",
+      "separator",
+      "table",
+      "textarea"
+    ],
+    "feature": ["component-example", "example"]
+  }
+}

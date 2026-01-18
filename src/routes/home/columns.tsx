@@ -1,15 +1,7 @@
+import { RiDeleteBinLine, RiMoreLine } from "@remixicon/react";
+import type { ColumnDef, RowData } from "@tanstack/react-table";
 import { useState } from "react";
-import { type ColumnDef } from "@tanstack/react-table";
 import type { ListTodosResponse } from "~/api/api";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,13 +13,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { RiMoreLine, RiDeleteBinLine } from "@remixicon/react";
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Input } from "~/components/ui/input";
 
 export type Todo = ListTodosResponse["todos"][number];
 
 declare module "@tanstack/react-table" {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface TableMeta<TData> {
+  // biome-ignore lint/correctness/noUnusedVariables: module augmentation requires matching signature
+  interface TableMeta<TData extends RowData> {
     onToggleComplete?: (id: number, isCompleted: boolean) => void;
     onDeleteTodo?: (id: number) => void;
     onUpdateTitle?: (id: number, title: string) => void;
@@ -102,9 +102,7 @@ export const columns: ColumnDef<Todo>[] = [
         <Checkbox
           checked={isCompleted}
           disabled={isLoading}
-          onCheckedChange={() =>
-            table.options.meta?.onToggleComplete?.(todo.id, isCompleted)
-          }
+          onCheckedChange={() => table.options.meta?.onToggleComplete?.(todo.id, isCompleted)}
           aria-label="Toggle complete"
         />
       );
@@ -138,19 +136,14 @@ export const columns: ColumnDef<Todo>[] = [
         <AlertDialog>
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="icon-sm" disabled={isLoading} />
-              }
+              render={<Button variant="ghost" size="icon-sm" disabled={isLoading} />}
             >
               <RiMoreLine className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <AlertDialogTrigger
                 render={
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={(e) => e.preventDefault()}
-                  />
+                  <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()} />
                 }
               >
                 <RiDeleteBinLine />
@@ -162,8 +155,7 @@ export const columns: ColumnDef<Todo>[] = [
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Todo</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{todo.title}"? This action
-                cannot be undone.
+                Are you sure you want to delete "{todo.title}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

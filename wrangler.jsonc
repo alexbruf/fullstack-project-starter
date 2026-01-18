@@ -10,39 +10,40 @@
   "main": "./src/workers/app.ts",
   "vars": {
     "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+    "EMAIL_FROM": "Todo App <no-reply@example.com>"
   },
   "observability": {
-    "enabled": true,
+    "enabled": true
   },
   "d1_databases": [
     {
       "binding": "TODO_DB",
       "database_name": "todo-db",
-      "database_id": "efab1e14-626f-47f5-a599-c272baba207c",
-    },
+      "database_id": "efab1e14-626f-47f5-a599-c272baba207c"
+    }
   ],
   "r2_buckets": [
     {
       "bucket_name": "todo-exports",
-      "binding": "TODO_EXPORTS",
-    },
+      "binding": "TODO_EXPORTS"
+    }
   ],
   "queues": {
     "producers": [
       {
         "queue": "email-queue",
-        "binding": "EMAIL_QUEUE",
-      },
+        "binding": "EMAIL_QUEUE"
+      }
     ],
     "consumers": [
       {
-        "queue": "email-queue",
-      },
-    ],
+        "queue": "email-queue"
+      }
+    ]
   },
   "triggers": {
-    "crons": ["0 0 * * *"],
-  },
+    "crons": ["0 0 * * *"]
+  }
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

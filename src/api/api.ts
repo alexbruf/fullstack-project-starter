@@ -1,13 +1,11 @@
-import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
-import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { env } from "cloudflare:workers";
-import { getDB, type TodoTable } from "~/lib/db";
-import { createMiddleware } from "hono/factory";
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { stream } from "hono/streaming";
 import type { Selectable } from "kysely";
 import { z } from "zod";
-import { subtle } from "node:crypto";
-import { stream } from "hono/streaming";
+import { getDB, type TodoTable } from "~/lib/db";
 import type { QueueMessage } from "~/workers/queue";
 
 const api = new Hono<{ Bindings: Env }>();
@@ -49,10 +47,7 @@ api.get("/protected", (c) => {
     return c.text("Unauthorized", 401);
   }
   return c.text(
-    "This is a protected route. User ID: " +
-      user.userId +
-      " is api key?: " +
-      user.tokenType,
+    `This is a protected route. User ID: ${user.userId} is api key?: ${user.tokenType}`,
   );
 });
 
@@ -61,8 +56,10 @@ export type ListTodosResponse = { todos: Selectable<TodoTable>[] };
 api.get("/todo", async (c) => {
   const auth = getAuthOrThrow(c);
   const db = await getDB(c.env);
-  const limit = parseInt(c.req.query("limit") ?? "20");
-  const offset = parseInt(c.req.query("offset") ?? "0");
+  const limitParam = parseInt(c.req.query("limit") ?? "20", 10);
+  const offsetParam = parseInt(c.req.query("offset") ?? "0", 10);
+  const limit = Number.isNaN(limitParam) || limitParam < 1 ? 20 : Math.min(limitParam, 100);
+  const offset = Number.isNaN(offsetParam) || offsetParam < 0 ? 0 : offsetParam;
   const todos = await db
     .selectFrom("todo")
     .selectAll()
@@ -87,10 +84,7 @@ api.post("/todo", async (c) => {
   const parsed = createTodoSchema.safeParse(body);
   if (parsed.error) return c.json({ error: parsed.error.message }, 400);
 
-  await db
-    .insertInto("todo")
-    .values({ user_id: auth.userId!, title: body.title })
-    .execute();
+  await db.insertInto("todo").values({ user_id: auth.userId!, title: parsed.data.title }).execute();
   return c.json({ success: true }, 201);
 });
 
@@ -112,27 +106,29 @@ api.put("/todo/:id", async (c) => {
 
   const isCheckedPreviously = await db
     .selectFrom("todo")
-    .where("id", "=", parseInt(c.req.param("id")))
+    .where("id", "=", parseInt(c.req.param("id"), 10))
     .select(["completed_date", "title"])
     .executeTakeFirst();
   const isNewlyChecked =
-    isCheckedPreviously?.completed_date === null &&
-    parsed.data.checkedDate !== null;
+    isCheckedPreviously?.completed_date === null && parsed.data.checkedDate !== null;
   await db
     .updateTable("todo")
     .set({
       title: parsed.data.title,
       completed_date: parsed.data.checkedDate,
     })
-    .where("id", "=", parseInt(c.req.param("id")))
+    .where("id", "=", parseInt(c.req.param("id"), 10))
     .where("user_id", "=", auth.userId!)
     .execute();
-  await c.env.EMAIL_QUEUE.send({
-    newlyCompletedTodo: {
-      email,
-      title: parsed.data.title || isCheckedPreviously?.title || "",
-    },
-  } satisfies QueueMessage);
+
+  if (isNewlyChecked) {
+    await c.env.EMAIL_QUEUE.send({
+      newlyCompletedTodo: {
+        email,
+        title: parsed.data.title || isCheckedPreviously?.title || "",
+      },
+    } satisfies QueueMessage);
+  }
 
   return c.json({ success: true });
 });
@@ -144,23 +140,18 @@ api.delete("/todo/:id", async (c) => {
 
   const resp = await db
     .deleteFrom("todo")
-    .where("id", "=", parseInt(c.req.param("id")))
+    .where("id", "=", parseInt(c.req.param("id"), 10))
     .where("user_id", "=", auth.userId!)
     .executeTakeFirst();
   return c.json({ success: !!resp.numDeletedRows });
 });
 
 api.get("/todo/export/:id", async (c) => {
-  const auth = getAuthOrThrow(c);
+  getAuthOrThrow(c); // Ensure user is authenticated
   const obj = await c.env.TODO_EXPORTS.get(c.req.param("id"));
   if (!obj) return c.text("Not Found", 404);
-  const contentType =
-    obj.httpMetadata?.contentType || "application/octet-stream";
   const contentLength = obj.size;
-  c.header(
-    "Content-Disposition",
-    `attachment; filename="${c.req.param("id")}"`,
-  );
+  c.header("Content-Disposition", `attachment; filename="${c.req.param("id")}"`);
   c.header("Content-Type", "application/octet-stream");
   c.header("Content-Length", contentLength.toString());
   return stream(c, async (stream) => {
@@ -181,10 +172,10 @@ api.post("/todo/export", async (c) => {
     .execute();
 
   // lets make it a csv now
-  const key = crypto.randomUUID() + ".csv";
+  const key = `${crypto.randomUUID()}.csv`;
   const upload = await c.env.TODO_EXPORTS.createMultipartUpload(key);
 
-  let part = await upload.uploadPart(
+  const part = await upload.uploadPart(
     1,
     new Blob(
       [
@@ -201,7 +192,7 @@ api.post("/todo/export", async (c) => {
   );
 
   await upload.complete([part]);
-  const url = new URL("/api/todo/export/" + key, c.req.url);
+  const url = new URL(`/api/todo/export/${key}`, c.req.url);
   return c.json({ url: url.toString() });
 });
 
